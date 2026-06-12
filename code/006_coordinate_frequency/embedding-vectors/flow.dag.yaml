@@ -1,0 +1,43 @@
+inputs:
+  model:
+    type: string
+    default: qwen3-embedding:8b
+  casefile:
+    type: string
+    default: english_cases\medicine_1\original\Case_1_Medicine_English_summary.csv
+  savefile:
+    type: string
+    default: qwen3\justatestfilee
+outputs: {}
+nodes:
+- name: GA_Open_Embedding_Model
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.open_embedding_model.create_open_embedding_model
+  inputs:
+    server_url: http://127.0.0.1:11434
+    model_name: ${inputs.model}
+- name: GA_File_To_Document
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.file_to_document.read_file_into_document
+  inputs:
+    file_path: ${inputs.casefile}
+- name: GA_Extract_Content
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.extract_content.extract_page_content
+  inputs:
+    doc: ${GA_File_To_Document.output}
+- name: Save_embedding_vector
+  type: python
+  source:
+    type: code
+    path: Save_embedding_vector.py
+  inputs:
+    embeddings: ${GA_Open_Embedding_Model.output}
+    text: ${GA_Extract_Content.output}
+    filename: ${inputs.savefile}

@@ -1,0 +1,39 @@
+inputs:
+  file_original:
+    type: string
+    default: qwen3\\eng_C1_original
+  file_reference:
+    type: string
+    default: qwen3\\eng_C1D1
+  savefile_path:
+    type: string
+    default: coordinates\\eng_C1D1
+  how_many:
+    type: int
+    default: 100
+  min_max_first:
+    type: string
+    default: max
+outputs:
+  coord:
+    type: string
+    reference: ${Coordinate_changes.output}
+nodes:
+- name: Coordinate_changes
+  type: python
+  source:
+    type: code
+    path: Coordinate_changes.py
+  inputs:
+    filename1: ${inputs.file_original}
+    filename2: ${inputs.file_reference}
+    min_max_first: ${inputs.min_max_first}
+    how_many: ${inputs.how_many}
+- name: Save_list
+  type: python
+  source:
+    type: code
+    path: Save_list.py
+  inputs:
+    data: ${Coordinate_changes.output}
+    filename: ${inputs.savefile_path}

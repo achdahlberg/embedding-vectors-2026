@@ -1,0 +1,114 @@
+inputs:
+  type:
+    type: string
+    default: delete
+  filename_ref:
+    type: string
+    default: cases\Case_5_Medicine_English_summary.csv
+  filename_mod:
+    type: string
+    default: cases\Case_5_Medicine_English_summary_delete_1.csv
+  savefile:
+    type: string
+    default: whatever.csv
+  em_model:
+    type: string
+    default: text-embedding-ada-002-2
+  language:
+    type: string
+    default: english
+  case:
+    type: string
+    default: medicine_5
+  filename_mod_tosave:
+    type: string
+    default: Case_5_Medicine_English_summary_delete_1.csv
+outputs:
+  L1:
+    type: string
+    reference: ${GA_L1_Distance.output}
+  euclidean_distance:
+    type: string
+    reference: ${GA_Euclidean_Distance.output}
+  cosine_similarity:
+    type: string
+    reference: ${GA_Cosine_Similarity.output}
+nodes:
+- name: GA_File_To_Document_ref
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.file_to_document.read_file_into_document
+  inputs:
+    file_path: ${inputs.filename_ref}
+- name: GA_File_To_Document_mod
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.file_to_document.read_file_into_document
+  inputs:
+    file_path: ${inputs.filename_mod}
+- name: GA_Extract_Content_ref
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.extract_content.extract_page_content
+  inputs:
+    doc: ${GA_File_To_Document_ref.output}
+- name: GA_Extract_Content_mod
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.extract_content.extract_page_content
+  inputs:
+    doc: ${GA_File_To_Document_mod.output}
+- name: GA_Append_To_CSV
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.append_to_csv.append_to_csv_file
+  inputs:
+    type: ${inputs.type}
+    model: ${inputs.em_model}
+    case: ${inputs.case}
+    language: ${inputs.language}
+    file_path: ${inputs.savefile}
+    file: ${inputs.filename_mod_tosave}
+    cosine_similarity: ${GA_Cosine_Similarity.output}
+    euclidean_distance: ${GA_Euclidean_Distance.output}
+    l1_distance: ${GA_L1_Distance.output}
+- name: GA_L1_Distance
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.l1_distance.calculate_l1_distance
+  inputs:
+    embeddings: ${GA_OpenAI_Embedding_Model.output}
+    text1: ${GA_Extract_Content_ref.output}
+    text2: ${GA_Extract_Content_mod.output}
+- name: GA_Euclidean_Distance
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.euclidean_distance.calculate_euclidean_distance
+  inputs:
+    embeddings: ${GA_OpenAI_Embedding_Model.output}
+    text1: ${GA_Extract_Content_ref.output}
+    text2: ${GA_Extract_Content_mod.output}
+- name: GA_OpenAI_Embedding_Model
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.openai_embedding_model.create_openai_embedding_model
+  inputs:
+    connection: new_open_ai_connection
+    model_name: ${inputs.em_model}
+- name: GA_Cosine_Similarity
+  type: python
+  source:
+    type: package
+    tool: genaid_promptflow.tools.cosine_similarity.calculate_cosine_similarity
+  inputs:
+    embeddings: ${GA_OpenAI_Embedding_Model.output}
+    text1: ${GA_Extract_Content_ref.output}
+    text2: ${GA_Extract_Content_mod.output}
